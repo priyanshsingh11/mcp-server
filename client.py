@@ -28,7 +28,7 @@ async def main():
     os.environ["GROQ_API_KEY"]=os.getenv("GROQ_API_KEY")
 
     tools=await client.get_tools()
-    model=ChatGroq(model="qwen-qwq-32b")
+    model=ChatGroq(model="qwen3-4b-a22b-instruct-qwen-2507-28b")
     agent=create_react_agent(
         model,tools
     )
