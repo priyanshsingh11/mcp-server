@@ -12,7 +12,7 @@ async def main():
         {
             "math":{
                 "command":"python",
-                "args":["mathserver.py"], ## Ensure correct absolute path
+                "args":["maths.py"],
                 "transport":"stdio",
             
             },
@@ -28,13 +28,13 @@ async def main():
     os.environ["GROQ_API_KEY"]=os.getenv("GROQ_API_KEY")
 
     tools=await client.get_tools()
-    model=ChatGroq(model="qwen3-4b-a22b-instruct-qwen-2507-28b")
+    model=ChatGroq(model="llama-3.1-8b-instant")
     agent=create_react_agent(
         model,tools
     )
 
     math_response = await agent.ainvoke(
-        {"messages": [{"role": "user", "content": "what's (3 + 5) x 12?"}]}
+        {"messages": [{"role": "user", "content": "what's (3 + 5) x 12? Please use the add tool first to calculate 3+5, and then pass that result to the multiple tool."}]}
     )
 
     print("Math response:", math_response['messages'][-1].content)

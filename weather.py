@@ -1,33 +1,32 @@
+import os
 import httpx
 from mcp.server.fastmcp import FastMCP
+from dotenv import load_dotenv
+
+load_dotenv()
 
 mcp=FastMCP("Weather")
 
 @mcp.tool()
 async def get_weather(location:str)->str:
     """Get the current weather for a specific location."""
+    api_key = os.getenv("OPENWEATHER_API_KEY")
+    if not api_key:
+        return "OpenWeatherMap API key is not configured."
+        
     async with httpx.AsyncClient() as client:
-        # First get the latitude and longitude from the location name
-        geo_url = f"https://geocoding-api.open-meteo.com/v1/search?name={location}&count=1"
-        geo_resp = await client.get(geo_url)
-        geo_data = geo_resp.json()
+        url = f"http://api.openweathermap.org/data/2.5/weather?q={location}&appid={api_key}&units=metric"
+        resp = await client.get(url)
+        data = resp.json()
         
-        if not geo_data.get("results"):
-            return f"Could not find the location: {location}"
+        if data.get("cod") != 200 and data.get("cod") != "200":
+            return f"Could not find weather for location: {location}. Error: {data.get('message', 'Unknown error')}"
             
-        lat = geo_data["results"][0]["latitude"]
-        lon = geo_data["results"][0]["longitude"]
-        name = geo_data["results"][0]["name"]
+        temp = data["main"]["temp"]
+        desc = data["weather"][0]["description"]
+        name = data["name"]
         
-        # Then get the current weather
-        weather_url = f"https://api.open-meteo.com/v1/forecast?latitude={lat}&longitude={lon}&current=temperature_2m,wind_speed_10m"
-        weather_resp = await client.get(weather_url)
-        weather_data = weather_resp.json()
-        
-        temp = weather_data["current"]["temperature_2m"]
-        wind = weather_data["current"]["wind_speed_10m"]
-        
-        return f"The current weather in {name} is {temp}°C with a wind speed of {wind} km/h."
+        return f"The current weather in {name} is {temp}°C with {desc}."
 
 if __name__=="__main__":
     mcp.run(transport="streamable-http")
